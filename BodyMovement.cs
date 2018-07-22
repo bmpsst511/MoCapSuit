@@ -16,7 +16,11 @@ public class BodyMovement : MonoBehaviour
     Socket socket; //目標Socket 
     EndPoint clientEnd; //客户端  
     IPEndPoint ipEnd; //監聽端口  
-    public float RotateX, RotateY, RotateZ, PoseX2, PoseY2, PoseZ2, AccX,AccY,AccZ;
+    public int RotateX, RotateY, RotateZ, RotateX2, RotateY2, RotateZ2;
+    public int  AccX,AccY,AccZ,AccX2,AccY2,AccZ2,RecognitionCondition=2;
+
+    public int StraightPunchMax=10, StraightPunchMin=-25, HookMax=45, HookMin=10, UpperMax=130, UpperMin=70;
+
     string recvStr; //接收的字符串  
     byte[] recvData=new byte[1024]; //接收的資料，必須為字串  
     int recvLen; //接收的字串長度 
@@ -50,7 +54,8 @@ public class BodyMovement : MonoBehaviour
     public Text Punch_view;
 
     public Text Force_view;
-    public Text Score_view;
+
+
     int score;
  	void InitSocket()  
     {  
@@ -60,7 +65,7 @@ public class BodyMovement : MonoBehaviour
         socket=new Socket(AddressFamily.InterNetwork,SocketType.Dgram,ProtocolType.Udp);  
         //伺服端绑定ip  
         socket.Bind(ipEnd);  
-        //定義客戶端，也是監聽所以客戶端IP  
+        //定義客戶端，也是監聽所有客戶端IP  
         IPEndPoint sender=new IPEndPoint(IPAddress.Any,0);  
         clientEnd=(EndPoint)sender;  
         print("waiting for UDP dgram");  
@@ -76,33 +81,36 @@ public class BodyMovement : MonoBehaviour
         while(true)  
         {  
 			var filter = new LowPassFilter(0.95f);
-            //清空data緩存  
+            //清空資料緩存  
             recvData=new byte[1024];  
             //獲取客戶端送來的資料  
             recvLen=socket.ReceiveFrom(recvData,ref clientEnd);  
-            //输出接收到的資料
+            //輸出接收到的資料
             recvStr=Encoding.ASCII.GetString(recvData,0,recvLen);  
            // print(recvStr); 
            //分割字串
             char[] splitChar = { ' ', ',', ':', '\t', ';' };
             string[] dataRaw = recvStr.Split(splitChar);
-            RotateX = float.Parse(dataRaw[0]);
-            RotateY = float.Parse(dataRaw[1]);
-            RotateZ = float.Parse(dataRaw[2]);
-            PoseX2 = float.Parse(dataRaw[3]);
-            PoseY2 = float.Parse(dataRaw[4]);
-            PoseZ2 = float.Parse(dataRaw[5]);
-            AccX = float.Parse(dataRaw[6]);
-            AccY = float.Parse(dataRaw[7]);
-            AccZ = float.Parse(dataRaw[8]);
+            RotateX = int.Parse(dataRaw[0]);
+            RotateY = int.Parse(dataRaw[1]);
+            RotateZ = int.Parse(dataRaw[2]);
+            RotateX2 = int.Parse(dataRaw[3]);
+            RotateY2 = int.Parse(dataRaw[4]);
+            RotateZ2 = int.Parse(dataRaw[5]);
+            AccX = int.Parse(dataRaw[6]);
+            AccY = int.Parse(dataRaw[7]);
+            AccZ = int.Parse(dataRaw[8]);
+            AccX2 = int.Parse(dataRaw[9]);
+            AccY2 = int.Parse(dataRaw[10]);
+            AccZ2 = int.Parse(dataRaw[11]);
            // FlexValue = float.Parse(dataRaw[6]);
 			// 使用低通濾波
             filter.Step(RotateX);
             filter.Step(RotateY);
             filter.Step(RotateZ);
-            filter.Step(PoseX2);
-            filter.Step(PoseY2);
-            filter.Step(PoseZ2);
+            filter.Step(RotateX2);
+            filter.Step(RotateY2);
+            filter.Step(RotateZ2);
             //filter.Step(FlexValue);
            
         }  
@@ -138,7 +146,7 @@ public class BodyMovement : MonoBehaviour
         //Head.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+222, -RotateY);//cjmcu-055
 
         //LeftShoulder.transform.rotation = Quaternion.Euler(RotateY, RotateZ-50, -RotateX);//cjmcu-055
-        LeftForeArm.transform.rotation = Quaternion.Euler(PoseY2, PoseX2-50, -PoseZ2);//cjmcu-055
+        LeftForeArm.transform.rotation = Quaternion.Euler(RotateY2, RotateX2-50, -RotateZ2);//cjmcu-055
         LeftArm.transform.rotation = Quaternion.Euler(RotateY, RotateX-58 , -RotateZ);//cjmcu-055
         //LeftArm.transform.rotation = Quaternion.Euler(PoseZ2, PoseX2 , PoseY2);//BNO-055
         //LeftHand.transform.rotation = Quaternion.Euler(RotateY, RotateZ-58 , -RotateX);//cjmcu-055
@@ -158,35 +166,59 @@ public class BodyMovement : MonoBehaviour
         Lx = RotateX;
         Ly = RotateY;
         Lz = RotateZ;
-        LFx = PoseX2;
-        LFy = PoseY2;
-        LFz = PoseZ2;
+        LFx = RotateX2;
+        LFy = RotateY2;
+        LFz = RotateZ2;
        //print(LFz+LFy-Lz);
        var Pos1dif = LFz+LFy-Lz;
-       /*print(Ly);
-       print(Lz);*/
-       if(AccX>2){
-            string heavy="大";
+       var level  = AccX+AccY+AccZ+AccX2+AccY2+AccZ2;
+       print(level);
+       //print(Lz);
+       if(AccX>RecognitionCondition){
+        if (AccX>20 )
+        {
+            string heavy = "大" ;
+            Force_view.text="力量:"+heavy;
+            print("大");
+            }      
+        /*if (AccX>5 && AccX<7)
+        { 
             string medium="中";
+            Force_view.text="力量"+medium;
+            }*/
+        if(AccX>2 && AccX<15)
+        {
             string weak="小";
-        if (AccX>30)
-        {Force_view.text="力量"+heavy;}
-        if (AccX>10 && AccX<20)
-        { Force_view.text="力量"+medium;}
-        if(AccX>3 && AccX<5)
-        {Force_view.text="力量"+weak;}
-        if(Pos1dif>-25 && Pos1dif<10)
+            Force_view.text="力量:"+weak;
+            }
+        if(Pos1dif>StraightPunchMin && Pos1dif<StraightPunchMax)
         {
             string punch1 = "直拳";
             Punch_view.text="拳路:"+punch1;
             
             print("直拳");
         }
-        if(Pos1dif>10 && Pos1dif<45)
+        if(Pos1dif>HookMin && Pos1dif<HookMax)
         {
             string punch2 = "鉤拳";
             Punch_view.text="拳路:"+punch2;
             print("鉤拳");
+        }
+        if(Pos1dif>UpperMin && Pos1dif<UpperMax)
+        {
+            string punch3 = "上鉤拳";
+            Punch_view.text="拳路:"+punch3;
+            print("上鉤拳");
+            if(AccY2>-6 && AccY2<0)
+        {
+            string weak2="小";
+            Force_view.text="力量:"+weak2;
+            }
+             if(AccY2>20 && AccY2<29)
+        {
+            string weak2="大";
+            Force_view.text="力量:"+weak2;
+            }
         }
        }
 	}
