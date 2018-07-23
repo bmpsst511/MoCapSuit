@@ -53,7 +53,9 @@ public class BodyMovement : MonoBehaviour
     
     public Text Punch_view;
 
-    public Text Force_view;
+    public Text StraightForce_view;
+    public Text HooktForce_view;
+    public Text UpperForce_view;
 
 
     int score;
@@ -171,54 +173,63 @@ public class BodyMovement : MonoBehaviour
         LFz = RotateZ2;
        //print(LFz+LFy-Lz);
        var Pos1dif = LFz+LFy-Lz;
-       var level  = AccX+AccY+AccZ+AccX2+AccY2+AccZ2;
+       var level  = AccX2+AccY2;
+       var HookLevel = AccX+AccY2;
        print(level);
        //print(Lz);
        if(AccX>RecognitionCondition){
-        if (AccX>20 )
-        {
-            string heavy = "大" ;
-            Force_view.text="力量:"+heavy;
-            print("大");
-            }      
-        /*if (AccX>5 && AccX<7)
-        { 
-            string medium="中";
-            Force_view.text="力量"+medium;
-            }*/
-        if(AccX>2 && AccX<15)
-        {
-            string weak="小";
-            Force_view.text="力量:"+weak;
-            }
+
         if(Pos1dif>StraightPunchMin && Pos1dif<StraightPunchMax)
         {
+            if (level>25 )
+            {
+            string heavy = "大" ;
+            StraightForce_view.text="直拳力道:"+heavy;
+            print("大");
+            }      
+            if(level>9 && level<30)
+            {
+            string weak="小";
+            StraightForce_view.text="直拳力道:"+weak;
+            }
             string punch1 = "直拳";
             Punch_view.text="拳路:"+punch1;
-            
+
             print("直拳");
         }
         if(Pos1dif>HookMin && Pos1dif<HookMax)
         {
+            if (HookLevel>25 && HookLevel<49 )
+            {
+            string heavy = "大" ;
+            HooktForce_view.text="鉤拳力道:"+heavy;
+            print("大");
+            }      
+            if(HookLevel<18 && HookLevel>10)
+            {
+            string weak="小";
+            HooktForce_view.text="鉤拳力道:"+weak;
+            }
             string punch2 = "鉤拳";
             Punch_view.text="拳路:"+punch2;
             print("鉤拳");
         }
         if(Pos1dif>UpperMin && Pos1dif<UpperMax)
         {
+             if(AccY2<15 && AccY2>8)
+            {
+            string weak2="小";
+            UpperForce_view.text="上鉤拳力道:"+weak2;
+            }
+             if(AccY2>20 && AccY2<40)
+            {
+            string weak2="大";
+            UpperForce_view.text="上鉤拳力道:"+weak2;
+            }
             string punch3 = "上鉤拳";
             Punch_view.text="拳路:"+punch3;
             print("上鉤拳");
-            if(AccY2>-6 && AccY2<0)
-        {
-            string weak2="小";
-            Force_view.text="力量:"+weak2;
-            }
-             if(AccY2>20 && AccY2<29)
-        {
-            string weak2="大";
-            Force_view.text="力量:"+weak2;
-            }
+           
         }
        }
 	}
