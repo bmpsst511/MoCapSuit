@@ -5,25 +5,37 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Text;
 using System.IO;
+using UnityEngine.UI;
+
 //引入库  
 using System.Net;  
 
-public class KSVM : MonoBehaviour
+public class FlexTest : MonoBehaviour
 {
-   //以下默认都是私有的成员  
-    Socket socket; //目标socket  
-    EndPoint clientEnd; //客户端  
-    IPEndPoint ipEnd; //侦听端口  
-    public float RotateX, RotateY, RotateZ, PoseX2, PoseY2, PoseZ2;
-    string recvStr; //接收的字符串  
-    string sendStr; //发送的字符串  
-    byte[] recvData=new byte[1024]; //接收的数据，必须为字节  
-    byte[] sendData=new byte[1024]; //发送的数据，必须为字节  
-    int recvLen; //接收的数据长度  
-    float Lx, Ly, Lz, LFx, LFy, LFz;
-    Thread connectThread; //连接线程  
 
-    //新增要控制的部位
+	public Animator Anim;
+	public AnimatorStateInfo BS;
+	public int Grab = Animator.StringToHash("Base Layer.Grab");
+	public int Stay = Animator.StringToHash("Base Layer.mixao_com");
+
+
+   //以下默认都是私有的成员  
+    Socket socket; //目標Socket 
+    EndPoint clientEnd; //客户端  
+    IPEndPoint ipEnd; //監聽端口  
+    public int RotateX, RotateY, RotateZ, RotateX2, RotateY2, RotateZ2;
+    public int  FlexValue,AccX,AccY,AccZ,AccX2,AccY2,AccZ2,RecognitionCondition=2;
+
+    string recvStr; //接收的字符串  
+    byte[] recvData=new byte[1024]; //接收的資料，必須為字串  
+    int recvLen; //接收的字串長度 
+    float Lx, Ly, Lz, LFx, LFy, LFz;
+    Thread connectThread; //連接執行緒  
+
+    /*新增要控制的部位*/
+   // public GameObject RightHandIndex1;
+    //public GameObject RightHandIndex2;
+    //public GameObject RightHandIndex3;
     //public GameObject Head;
 
     //public GameObject LeftShoulder;
@@ -43,78 +55,77 @@ public class KSVM : MonoBehaviour
     //public GameObject RightUpLeg;
     //public GameObject RightLeg;
     //public GameObject RightFoot;
-
+    
+    int score;
  	void InitSocket()  
     {  
-        //定义侦听端口,侦听任何IP  
+        //定義監聽端口，監聽任何IP位址
         ipEnd=new IPEndPoint(IPAddress.Any,27);  
-        //定义套接字类型,在主线程中定义  
+        //定義網路協定  
         socket=new Socket(AddressFamily.InterNetwork,SocketType.Dgram,ProtocolType.Udp);  
-        //服务端需要绑定ip  
+        //伺服端绑定ip  
         socket.Bind(ipEnd);  
-        //定义客户端  
+        //定義客戶端，也是監聽所有客戶端IP  
         IPEndPoint sender=new IPEndPoint(IPAddress.Any,0);  
         clientEnd=(EndPoint)sender;  
         print("waiting for UDP dgram");  
   
-        //开启一个线程连接，必须的，否则主线程卡死  
+        //使用新的執行緒執行連線，否則遊戲會卡死  
         connectThread=new Thread(new ThreadStart(SocketReceive));  
         connectThread.Start();  
     }  
 
-/*void SocketSend(string sendStr)  
-    {  
-        //清空发送缓存  
-        sendData=new byte[1024];  
-        //数据类型转换  
-        sendData=Encoding.ASCII.GetBytes(sendStr);  
-        //发送给指定客户端  
-        socket.SendTo(sendData,sendData.Length,SocketFlags.None,clientEnd);  
-    }*/
-
 	    void SocketReceive()  
     {  
-        //进入接收循环  
+        //接收資料端
         while(true)  
         {  
 			var filter = new LowPassFilter(0.95f);
-            //对data清零  
+            //清空資料緩存  
             recvData=new byte[1024];  
-            //获取客户端，获取客户端数据，用引用给客户端赋值  
+            //獲取客戶端送來的資料  
             recvLen=socket.ReceiveFrom(recvData,ref clientEnd);  
-            //print("message from: "+clientEnd.ToString()); //打印客户端信息  
-            //输出接收到的数据  
+            //輸出接收到的資料
             recvStr=Encoding.ASCII.GetString(recvData,0,recvLen);  
            // print(recvStr); 
+           //分割字串
             char[] splitChar = { ' ', ',', ':', '\t', ';' };
             string[] dataRaw = recvStr.Split(splitChar);
-            RotateX = float.Parse(dataRaw[2]);
-            RotateY = float.Parse(dataRaw[1]);
-            RotateZ = float.Parse(dataRaw[0]);
-            PoseX2 = float.Parse(dataRaw[3]);
-            PoseY2 = float.Parse(dataRaw[4]);
-            PoseZ2 = float.Parse(dataRaw[5]);
-			// Use the `LowPassFilter` to smooth out values
+            RotateX = int.Parse(dataRaw[0]);
+            RotateY = int.Parse(dataRaw[1]);
+            RotateZ = int.Parse(dataRaw[2]);
+            RotateX2 = int.Parse(dataRaw[3]);
+            RotateY2 = int.Parse(dataRaw[4]);
+            RotateZ2 = int.Parse(dataRaw[5]);
+            AccX = int.Parse(dataRaw[6]);
+            AccY = int.Parse(dataRaw[7]);
+            AccZ = int.Parse(dataRaw[8]);
+            AccX2 = int.Parse(dataRaw[9]);
+            AccY2 = int.Parse(dataRaw[10]);
+            AccZ2 = int.Parse(dataRaw[11]);
+            FlexValue = int.Parse(dataRaw[12]);
+			// 使用低通濾波
             filter.Step(RotateX);
             filter.Step(RotateY);
             filter.Step(RotateZ);
-            filter.Step(PoseX2);
-            filter.Step(PoseY2);
-            filter.Step(PoseZ2);
+            filter.Step(RotateX2);
+            filter.Step(RotateY2);
+            filter.Step(RotateZ2);
+            //filter.Step(FlexValue);
            
         }  
     }  
 
-    //连接关闭  
+    //關閉連線  
     void SocketQuit()  
     {  
-        //关闭线程  
+        //關閉執行緒  
         if(connectThread!=null)  
         {  
             connectThread.Interrupt();  
             connectThread.Abort();  
         }  
-        //最后关闭socket  
+        //最後關閉Socket 
         if(socket!=null)  
             socket.Close();  
         print("disconnect");  
@@ -122,18 +133,31 @@ public class KSVM : MonoBehaviour
 
     void Start()
     {
-       InitSocket(); //在这里初始化server
+       InitSocket(); //初始化Server
     }
     void FixedUpdate()
-    {
+    {	
 		
-        /* Body Control Session */
+		if(FlexValue<-30)
+		{
+			Anim.SetBool("grab",true);
+		}else
+		{
+			Anim.SetBool("grab",false);
+		}
+	}
+	void LateUpdate()
+	{
+        /* 人體骨架控制區 */
+       // RightHandIndex1.transform.rotation = Quaternion.Euler(0, 0, -FlexValue);//cjmcu-055
+       	//RightHandIndex2.transform.rotation = Quaternion.Euler(0, 0, FlexValue);//cjmcu-055
+        //RightHandIndex3.transform.rotation = Quaternion.Euler(0, 0, FlexValue);//cjmcu-055
 
         //Head.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+222, -RotateY);//cjmcu-055
 
         //LeftShoulder.transform.rotation = Quaternion.Euler(RotateY, RotateZ-50, -RotateX);//cjmcu-055
-        LeftForeArm.transform.rotation = Quaternion.Euler(PoseY2, PoseX2-50, -PoseZ2);//cjmcu-055
-        LeftArm.transform.rotation = Quaternion.Euler(RotateY, RotateZ-58 , -RotateX);//cjmcu-055
+        LeftForeArm.transform.rotation = Quaternion.Euler(RotateY2, RotateX2-50, -RotateZ2);//cjmcu-055
+        LeftArm.transform.rotation = Quaternion.Euler(RotateY, RotateX-58 , -RotateZ);//cjmcu-055
         //LeftArm.transform.rotation = Quaternion.Euler(PoseZ2, PoseX2 , PoseY2);//BNO-055
         //LeftHand.transform.rotation = Quaternion.Euler(RotateY, RotateZ-58 , -RotateX);//cjmcu-055
 
@@ -149,24 +173,9 @@ public class KSVM : MonoBehaviour
         //RightUpLeg.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+225, -RotateY);//cjmcu-055
         //RightLeg.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+225, -RotateY);//cjmcu-055
         //RightFoot.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+225, -RotateY);//cjmcu-055
-        Ly = LeftArm.transform.rotation.y;
-        Lx = LeftArm.transform.rotation.x;
-        Lz = LeftArm.transform.rotation.z;
-        LFx = LeftForeArm.transform.rotation.x;
-        LFy = LeftForeArm.transform.rotation.y;
-        LFz = LeftForeArm.transform.rotation.z;
-       //print(LFy);
-        if(Ly>=0.8 && Ly<=0.9 && LFy>=0.98 && LFy<=0.99)
-        {
-            print("鉤拳");
-        }
-        if(Ly>=0.6 && Ly<=0.7 && LFy>=0.71 && LFy<=0.8)
-        {
-            print("直拳");
-        }
-
 	}
 
+	
     void OnApplicationQuit()  
     {  
         SocketQuit();  
@@ -187,7 +196,6 @@ public class KSVM : MonoBehaviour
         }
     }
 }
-
 
 
 
