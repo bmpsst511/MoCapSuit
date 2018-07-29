@@ -5,37 +5,26 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Text;
 using System.IO;
-using UnityEngine.UI;
-
 //引入库  
 using System.Net;  
 
-public class FlexTest : MonoBehaviour
+public class HandMovement : MonoBehaviour
 {
-
-	public Animator Anim;
-	public AnimatorStateInfo BS;
-	public int Grab = Animator.StringToHash("Base Layer.Grab");
-	public int Stay = Animator.StringToHash("Base Layer.mixao_com");
-
-
    //以下默认都是私有的成员  
-    Socket socket; //目標Socket 
+    Socket socket; //目标socket  
     EndPoint clientEnd; //客户端  
-    IPEndPoint ipEnd; //監聽端口  
-    public int RotateX, RotateY, RotateZ, RotateX2, RotateY2, RotateZ2;
-    public int  FlexValue,AccX,AccY,AccZ,AccX2,AccY2,AccZ2,RecognitionCondition=2;
-
+    IPEndPoint ipEnd; //侦听端口  
+    public float RotateX, RotateY, RotateZ, RotateX2, RotateY2, RotateZ2;
+    public int Flexval;
     string recvStr; //接收的字符串  
-    byte[] recvData=new byte[1024]; //接收的資料，必須為字串  
-    int recvLen; //接收的字串長度 
+    string sendStr; //发送的字符串  
+    byte[] recvData=new byte[1024]; //接收的数据，必须为字节  
+    byte[] sendData=new byte[1024]; //发送的数据，必须为字节  
+    int recvLen; //接收的数据长度  
     float Lx, Ly, Lz, LFx, LFy, LFz;
-    Thread connectThread; //連接執行緒  
+    Thread connectThread; //连接线程  
 
-    /*新增要控制的部位*/
-   // public GameObject RightHandIndex1;
-    //public GameObject RightHandIndex2;
-    //public GameObject RightHandIndex3;
+    //新增要控制的部位
     //public GameObject Head;
 
     //public GameObject LeftShoulder;
@@ -55,77 +44,91 @@ public class FlexTest : MonoBehaviour
     //public GameObject RightUpLeg;
     //public GameObject RightLeg;
     //public GameObject RightFoot;
-    
-    int score;
+
+	 public float speed = 10;
+     public bool canHold = true;
+     public GameObject ball;
+     public Transform guide;
+
+     public GameObject HeadUnity;
+
+     public Animator Anim;
+	public AnimatorStateInfo BA;
+	public int Grab = Animator.StringToHash("Base Layer.grab2");
+	public int Stay = Animator.StringToHash("Base Layer.stayidle2");
+
  	void InitSocket()  
     {  
-        //定義監聽端口，監聽任何IP位址
-        ipEnd=new IPEndPoint(IPAddress.Any,27);  
-        //定義網路協定  
+        //定义侦听端口,侦听任何IP  
+        ipEnd=new IPEndPoint(IPAddress.Parse("192.168.1.112"),28);  
+        //定义套接字类型,在主线程中定义  
         socket=new Socket(AddressFamily.InterNetwork,SocketType.Dgram,ProtocolType.Udp);  
-        //伺服端绑定ip  
+        //服务端需要绑定ip  
         socket.Bind(ipEnd);  
-        //定義客戶端，也是監聽所有客戶端IP  
-        IPEndPoint sender=new IPEndPoint(IPAddress.Any,0);  
+        //定义客户端  
+        IPEndPoint sender=new IPEndPoint(IPAddress.Parse("192.168.1.116"),28);  
         clientEnd=(EndPoint)sender;  
         print("waiting for UDP dgram");  
   
-        //使用新的執行緒執行連線，否則遊戲會卡死  
+        //开启一个线程连接，必须的，否则主线程卡死  
         connectThread=new Thread(new ThreadStart(SocketReceive));  
         connectThread.Start();  
     }  
 
+/*void SocketSend(string sendStr)  
+    {  
+        //清空发送缓存  
+        sendData=new byte[1024];  
+        //数据类型转换  
+        sendData=Encoding.ASCII.GetBytes(sendStr);  
+        //发送给指定客户端  
+        socket.SendTo(sendData,sendData.Length,SocketFlags.None,clientEnd);  
+    }*/
+
 	    void SocketReceive()  
     {  
-        //接收資料端
+        //进入接收循环  
         while(true)  
         {  
 			var filter = new LowPassFilter(0.95f);
-            //清空資料緩存  
+            //对data清零  
             recvData=new byte[1024];  
-            //獲取客戶端送來的資料  
+            //获取客户端，获取客户端数据，用引用给客户端赋值  
             recvLen=socket.ReceiveFrom(recvData,ref clientEnd);  
-            //輸出接收到的資料
+            //print("message from: "+clientEnd.ToString()); //打印客户端信息  
+            //输出接收到的数据  
             recvStr=Encoding.ASCII.GetString(recvData,0,recvLen);  
            // print(recvStr); 
-           //分割字串
             char[] splitChar = { ' ', ',', ':', '\t', ';' };
             string[] dataRaw = recvStr.Split(splitChar);
-            RotateX = int.Parse(dataRaw[0]);
-            RotateY = int.Parse(dataRaw[1]);
-            RotateZ = int.Parse(dataRaw[2]);
-            RotateX2 = int.Parse(dataRaw[3]);
-            RotateY2 = int.Parse(dataRaw[4]);
-            RotateZ2 = int.Parse(dataRaw[5]);
-            AccX = int.Parse(dataRaw[6]);
-            AccY = int.Parse(dataRaw[7]);
-            AccZ = int.Parse(dataRaw[8]);
-            AccX2 = int.Parse(dataRaw[9]);
-            AccY2 = int.Parse(dataRaw[10]);
-            AccZ2 = int.Parse(dataRaw[11]);
-            FlexValue = int.Parse(dataRaw[12]);
-			// 使用低通濾波
+            RotateX = float.Parse(dataRaw[0]);
+            RotateY = float.Parse(dataRaw[1]);
+            RotateZ = float.Parse(dataRaw[2]);
+            RotateX2 = float.Parse(dataRaw[3]);
+            RotateY2 = float.Parse(dataRaw[4]);
+            RotateZ2 = float.Parse(dataRaw[5]);
+            Flexval = int.Parse(dataRaw[6]);
+			// Use the `LowPassFilter` to smooth out values
             filter.Step(RotateX);
             filter.Step(RotateY);
             filter.Step(RotateZ);
             filter.Step(RotateX2);
             filter.Step(RotateY2);
             filter.Step(RotateZ2);
-            //filter.Step(FlexValue);
            
         }  
     }  
 
-    //關閉連線  
+    //连接关闭  
     void SocketQuit()  
     {  
-        //關閉執行緒  
+        //关闭线程  
         if(connectThread!=null)  
         {  
             connectThread.Interrupt();  
             connectThread.Abort();  
         }  
-        //最後關閉Socket 
+        //最后关闭socket  
         if(socket!=null)  
             socket.Close();  
         print("disconnect");  
@@ -133,31 +136,33 @@ public class FlexTest : MonoBehaviour
 
     void Start()
     {
-       InitSocket(); //初始化Server
+       InitSocket(); //在这里初始化server
     }
+
     void FixedUpdate()
-    {	
-		
-		if(FlexValue<-30)
+    {
+		if(Flexval<-30)
 		{
-			Anim.SetBool("grab",true);
+			Anim.SetBool("grabb",true);
+            if (!canHold)
+               throw_drop();
+           else
+               Pickup();
 		}else
 		{
-			Anim.SetBool("grab",false);
+			Anim.SetBool("grabb",false);
 		}
-	}
-	void LateUpdate()
-	{
-        /* 人體骨架控制區 */
-       // RightHandIndex1.transform.rotation = Quaternion.Euler(0, 0, -FlexValue);//cjmcu-055
-       	//RightHandIndex2.transform.rotation = Quaternion.Euler(0, 0, FlexValue);//cjmcu-055
-        //RightHandIndex3.transform.rotation = Quaternion.Euler(0, 0, FlexValue);//cjmcu-055
+    }
+    void LateUpdate()
+    {
+
+        /* Body Control Session */
 
         //Head.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+222, -RotateY);//cjmcu-055
 
         //LeftShoulder.transform.rotation = Quaternion.Euler(RotateY, RotateZ-50, -RotateX);//cjmcu-055
+        LeftArm.transform.rotation = Quaternion.Euler(RotateY, RotateX-50 , -RotateZ);//cjmcu-055
         LeftForeArm.transform.rotation = Quaternion.Euler(RotateY2, RotateX2-50, -RotateZ2);//cjmcu-055
-        LeftArm.transform.rotation = Quaternion.Euler(RotateY, RotateX-58 , -RotateZ);//cjmcu-055
         //LeftArm.transform.rotation = Quaternion.Euler(PoseZ2, PoseX2 , PoseY2);//BNO-055
         //LeftHand.transform.rotation = Quaternion.Euler(RotateY, RotateZ-58 , -RotateX);//cjmcu-055
 
@@ -173,9 +178,35 @@ public class FlexTest : MonoBehaviour
         //RightUpLeg.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+225, -RotateY);//cjmcu-055
         //RightLeg.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+225, -RotateY);//cjmcu-055
         //RightFoot.transform.rotation = Quaternion.Euler(-RotateX, RotateZ+225, -RotateY);//cjmcu-055
+       /* Ly = LeftArm.transform.rotation.y;
+        Lx = LeftArm.transform.rotation.x;
+        Lz = LeftArm.transform.rotation.z;
+        LFx = LeftForeArm.transform.rotation.x;
+        LFy = LeftForeArm.transform.rotation.y;
+        LFz = LeftForeArm.transform.rotation.z;
+       //print(LFy);
+        if(Ly>=0.8 && Ly<=0.9 && LFy>=0.98 && LFy<=0.99)
+        {
+            print("鉤拳");
+        }
+        if(Ly>=0.6 && Ly<=0.7 && LFy>=0.71 && LFy<=0.8)
+        {
+            print("直拳");
+		}*/
+
+		 if (Input.GetMouseButtonDown(0))
+       {
+           if (!canHold)
+               throw_drop();
+           else
+               Pickup();
+       }//mause If
+  
+       if (!canHold && ball)
+           ball.transform.localPosition = guide.localPosition;
+
 	}
 
-	
     void OnApplicationQuit()  
     {  
         SocketQuit();  
@@ -195,7 +226,63 @@ public class FlexTest : MonoBehaviour
             SmoothedValue = _smoothingFactor * sensorValue + (1 - _smoothingFactor) * SmoothedValue;
         }
     }
+
+	 //We can use trigger or Collision
+     void OnTriggerEnter(Collider col)
+     {
+         if (col.gameObject.tag == "ball")
+             if (!ball) // if we don't have anything holding
+                 ball = col.gameObject;
+     }
+
+	    //We can use trigger or Collision
+     void OnTriggerExit(Collider col)
+     {
+         if (col.gameObject.tag == "ball")
+         {
+             if (canHold)
+                 ball = null;
+         }
+     }
+ 
+ 
+     private void Pickup()
+     {
+         if (!ball)
+             return;
+ 
+         //We set the object parent to our guide empty object.
+         ball.transform.SetParent(guide);
+ 
+         //Set gravity to false while holding it
+         ball.GetComponent<Rigidbody>().useGravity = false;
+ 
+         //we apply the same rotation our main object (Camera) has.
+         ball.transform.localRotation = transform.localRotation;
+         //We re-position the ball on our guide object 
+         ball.transform.localPosition = guide.localPosition;
+ 
+         canHold = false;
+     }
+ 
+     private void throw_drop()
+     {
+         if (!ball)
+             return;
+ 
+         //Set our Gravity to true again.
+         ball.GetComponent<Rigidbody>().useGravity = true;
+          // we don't have anything to do with our ball field anymore
+          ball = null; 
+         //Apply velocity on throwing
+         guide.GetChild(0).gameObject.GetComponent<Rigidbody>().velocity = transform.forward * speed;
+ 
+         //Unparent our ball
+         guide.GetChild(0).parent = null;
+         canHold = true;
+     }
 }
+
 
 
 
