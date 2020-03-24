@@ -7,12 +7,12 @@ using System.Text;
 using System.IO;
 using UnityEngine.UI;
 
-//引入库  
+//引入庫  
 using System.Net;  
 
 public class BodyMovement : MonoBehaviour
 {
-   //以下默认都是私有的成员  
+    //以下默認都是私有的成員  
     Socket socket; //目標Socket 
     EndPoint clientEnd; //客户端  
     IPEndPoint ipEnd; //監聽端口  
