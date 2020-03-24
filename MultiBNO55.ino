@@ -122,7 +122,7 @@ void setup() {
  
 void loop() {
 
-    Filter_Value = Filter()+30;       // 获得滤波器输出值
+    Filter_Value = Filter()+30;       // 獲得濾波器輸出值
    // Serial.print(Filter_Value);Serial.print(";");
    // Possible vector values can be:
   // - VECTOR_ACCELEROMETER - m/s^2
@@ -267,10 +267,22 @@ void loop() {
   delay(BNO055_SAMPLERATE_DELAY_MS);
  } 
 
- // 加权递推平均滤波法
+ /*
+A、名稱：加權遞推平均濾波法
+B、方法：
+    是針對遞推平均濾波法的改進．即不同時刻的數據加以不同的權重
+    通常是，越靠近現時刻的數據，權取得越大。
+    給予新採樣值得權係數越大，則靈敏度越高，但信號平滑度越低。
+C、優點：
+    適用於有效大純滯後時間常數的對象，和採樣周期較短的系統。
+D、缺點：
+    對於純滯後時間長數較小、採樣周數較長、變化緩慢的信號；
+    不能迅速反應系統當前所受干擾的嚴重程度，濾波效果差。
+*/
+// 加權遞推平均濾波法
 #define FILTER_N 12
-int coe[FILTER_N] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};    // 加权系数表
-int sum_coe = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12; // 加权系数和
+int coe[FILTER_N] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};    // 加權係數表
+int sum_coe = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12; // 加權係數和
 int filter_buf[FILTER_N + 1];
 int Filter() {
   // Read the ADC, and calculate voltage and resistance from it
@@ -287,7 +299,7 @@ int Filter() {
   int filter_sum = 0;
   filter_buf[FILTER_N] = angle;
   for(i = 0; i < FILTER_N; i++) {
-    filter_buf[i] = filter_buf[i + 1]; // 所有数据左移，低位仍掉
+    filter_buf[i] = filter_buf[i + 1]; // 所有數據左移，低位仍掉
     filter_sum += filter_buf[i] * coe[i];
   }
   filter_sum /= sum_coe;
