@@ -5,7 +5,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Text;
 using System.IO;
-//引入库  
+//引入庫  
 using System.Net;  
 
 public class HandMovement : MonoBehaviour
@@ -13,16 +13,16 @@ public class HandMovement : MonoBehaviour
    //以下默认都是私有的成员  
     Socket socket; //目标socket  
     EndPoint clientEnd; //客户端  
-    IPEndPoint ipEnd; //侦听端口  
+    IPEndPoint ipEnd; //偵聽端口  
     public float RotateX, RotateY, RotateZ, RotateX2, RotateY2, RotateZ2;
     public int Flexval;
     string recvStr; //接收的字符串  
-    string sendStr; //发送的字符串  
-    byte[] recvData=new byte[1024]; //接收的数据，必须为字节  
-    byte[] sendData=new byte[1024]; //发送的数据，必须为字节  
-    int recvLen; //接收的数据长度  
+    string sendStr; //發送的字符串  
+    byte[] recvData=new byte[1024]; //接收的數據，必須為字節
+    byte[] sendData=new byte[1024]; //發送的數據，必須為字節
+    int recvLen; //接收的數據長度  
     float Lx, Ly, Lz, LFx, LFy, LFz;
-    Thread connectThread; //连接线程  
+    Thread connectThread; //連接線程  
 
     //新增要控制的部位
     //public GameObject Head;
@@ -59,44 +59,44 @@ public class HandMovement : MonoBehaviour
 
  	void InitSocket()  
     {  
-        //定义侦听端口,侦听任何IP  
+        //定義偵聽端口,偵聽任何IP  
         ipEnd=new IPEndPoint(IPAddress.Parse("192.168.1.112"),28);  
-        //定义套接字类型,在主线程中定义  
+        //定義套接字類型,在主線程中定義 
         socket=new Socket(AddressFamily.InterNetwork,SocketType.Dgram,ProtocolType.Udp);  
-        //服务端需要绑定ip  
+        //服務端需要綁定ip  
         socket.Bind(ipEnd);  
-        //定义客户端  
+        //定義客戶端  
         IPEndPoint sender=new IPEndPoint(IPAddress.Parse("192.168.1.116"),28);  
         clientEnd=(EndPoint)sender;  
         print("waiting for UDP dgram");  
   
-        //开启一个线程连接，必须的，否则主线程卡死  
+        //開啟一個線程連接，必須的，否則主線程卡死
         connectThread=new Thread(new ThreadStart(SocketReceive));  
         connectThread.Start();  
     }  
 
 /*void SocketSend(string sendStr)  
     {  
-        //清空发送缓存  
+        //清空發送緩存  
         sendData=new byte[1024];  
-        //数据类型转换  
+        //數據類型轉換  
         sendData=Encoding.ASCII.GetBytes(sendStr);  
-        //发送给指定客户端  
+        //發送給指定客戶端  
         socket.SendTo(sendData,sendData.Length,SocketFlags.None,clientEnd);  
     }*/
 
 	    void SocketReceive()  
     {  
-        //进入接收循环  
+        //進入接收循環  
         while(true)  
         {  
 			var filter = new LowPassFilter(0.95f);
-            //对data清零  
+            //對data清零  
             recvData=new byte[1024];  
-            //获取客户端，获取客户端数据，用引用给客户端赋值  
+            //獲取客戶端，獲取客戶端數據，用引用給客戶端賦值
             recvLen=socket.ReceiveFrom(recvData,ref clientEnd);  
-            //print("message from: "+clientEnd.ToString()); //打印客户端信息  
-            //输出接收到的数据  
+            //print("message from: "+clientEnd.ToString()); //列印客户端信息
+            //輸出接收到的數據  
             recvStr=Encoding.ASCII.GetString(recvData,0,recvLen);  
            // print(recvStr); 
             char[] splitChar = { ' ', ',', ':', '\t', ';' };
@@ -119,16 +119,16 @@ public class HandMovement : MonoBehaviour
         }  
     }  
 
-    //连接关闭  
+    //連接關閉  
     void SocketQuit()  
     {  
-        //关闭线程  
+        //關閉線程  
         if(connectThread!=null)  
         {  
             connectThread.Interrupt();  
             connectThread.Abort();  
         }  
-        //最后关闭socket  
+        //最後關閉socket  
         if(socket!=null)  
             socket.Close();  
         print("disconnect");  
@@ -136,7 +136,7 @@ public class HandMovement : MonoBehaviour
 
     void Start()
     {
-       InitSocket(); //在这里初始化server
+       InitSocket(); //在這裡初始化server
     }
 
     void FixedUpdate()
