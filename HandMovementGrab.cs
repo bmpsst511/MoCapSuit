@@ -45,7 +45,7 @@ public class HandMovement : MonoBehaviour
     //public GameObject RightLeg;
     //public GameObject RightFoot;
 
-	 public float speed = 10;
+     public float speed = 10;
      public bool canHold = true;
      public GameObject ball;
      public Transform guide;
@@ -53,11 +53,11 @@ public class HandMovement : MonoBehaviour
      public GameObject HeadUnity;
 
      public Animator Anim;
-	public AnimatorStateInfo BA;
-	public int Grab = Animator.StringToHash("Base Layer.grab2");
-	public int Stay = Animator.StringToHash("Base Layer.stayidle2");
+     public AnimatorStateInfo BA;
+     public int Grab = Animator.StringToHash("Base Layer.grab2");
+     public int Stay = Animator.StringToHash("Base Layer.stayidle2");
 
- 	void InitSocket()  
+    void InitSocket()  
     {  
         //定義偵聽端口,偵聽任何IP  
         ipEnd=new IPEndPoint(IPAddress.Parse("192.168.1.112"),28);  
@@ -85,12 +85,12 @@ public class HandMovement : MonoBehaviour
         socket.SendTo(sendData,sendData.Length,SocketFlags.None,clientEnd);  
     }*/
 
-	    void SocketReceive()  
+    void SocketReceive()  
     {  
         //進入接收循環  
         while(true)  
         {  
-			var filter = new LowPassFilter(0.95f);
+	    var filter = new LowPassFilter(0.95f);
             //對data清零  
             recvData=new byte[1024];  
             //獲取客戶端，獲取客戶端數據，用引用給客戶端賦值
@@ -108,7 +108,7 @@ public class HandMovement : MonoBehaviour
             RotateY2 = float.Parse(dataRaw[4]);
             RotateZ2 = float.Parse(dataRaw[5]);
             Flexval = int.Parse(dataRaw[6]);
-			// Use the `LowPassFilter` to smooth out values
+            // Use the `LowPassFilter` to smooth out values
             filter.Step(RotateX);
             filter.Step(RotateY);
             filter.Step(RotateZ);
@@ -141,18 +141,19 @@ public class HandMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-		if(Flexval<-30)
-		{
-			Anim.SetBool("grabb",true);
+	if(Flexval<-30)
+	{
+	   Anim.SetBool("grabb",true);
             if (!canHold)
                throw_drop();
            else
                Pickup();
-		}else
-		{
-			Anim.SetBool("grabb",false);
-		}
+	}else
+	{
+	 Anim.SetBool("grabb",false);
+	}
     }
+    
     void LateUpdate()
     {
 
@@ -194,17 +195,16 @@ public class HandMovement : MonoBehaviour
             print("直拳");
 		}*/
 
-		 if (Input.GetMouseButtonDown(0))
-       {
-           if (!canHold)
-               throw_drop();
-           else
-               Pickup();
-       }//mause If
-  
-       if (!canHold && ball)
-           ball.transform.localPosition = guide.localPosition;
+	if (Input.GetMouseButtonDown(0))
+	{
+	   if (!canHold)
+	       throw_drop();
+	   else
+	       Pickup();
+	}//mause If
 
+	if (!canHold && ball)
+	   ball.transform.localPosition = guide.localPosition;
 	}
 
     void OnApplicationQuit()  
